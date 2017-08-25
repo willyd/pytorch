@@ -22,11 +22,18 @@ DEBUG = check_env_flag('DEBUG')
 IS_WINDOWS = (platform.system() == 'Windows')
 IS_DARWIN = (platform.system() == 'Darwin')
 IS_LINUX = (platform.system() == 'Linux')
-WITH_DISTRIBUTED = not check_env_flag('NO_DISTRIBUTED')
+WITH_DISTRIBUTED = (not check_env_flag('NO_DISTRIBUTED')) and (not IS_WINDOWS)
 WITH_DISTRIBUTED_MW = WITH_DISTRIBUTED and check_env_flag('WITH_DISTRIBUTED_MW')
 WITH_NCCL = WITH_CUDA and not (IS_DARWIN or IS_WINDOWS)
 SYSTEM_NCCL = False
 
+if IS_WINDOWS:
+    this_dir = os.path.dirname(__file__)
+    dst = os.path.join(this_dir, 'tools\\shared\\cwrap_common.py')
+    src = os.path.join(this_dir, 'torch\\lib\\ATen\\common_with_cwrap.py')
+    if os.path.exists(dst):
+        os.remove(dst)
+    shutil.copy(src, dst)
 
 ################################################################################
 # Workaround setuptools -Wstrict-prototypes warnings

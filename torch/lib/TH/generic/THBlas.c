@@ -22,10 +22,10 @@ TH_EXTERNC double ddot_(int *n, double *x, int *incx, double *y, int *incy);
 TH_EXTERNC float cblas_sdot(const int n, const float *x, const int incx, const float *y, const int incy);
 #ifndef THBlas_C_sdot_
 #define THBlas_C_sdot_
-inline ffloat sdot_(const int *n, const float *x, const int *incx, const float *y, const int *incy)
-{
-  return cblas_sdot(*n, x, *incx, y, *incy);
-}
+// inline ffloat sdot_(const int *n, const float *x, const int *incx, const float *y, const int *incy)
+// {
+//   return cblas_sdot(*n, x, *incx, y, *incy);
+// }
 #endif
 #else
 TH_EXTERNC ffloat sdot_(int *n, float *x, int *incx, float *y, int *incy);

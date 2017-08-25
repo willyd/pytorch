@@ -12,6 +12,13 @@ set PATH=%INSTALL_DIR%/bin;%PATH%
 set BASIC_C_FLAGS= /DTH_INDEX_BASE=0 /I%INSTALL_DIR%/include /I%INSTALL_DIR%/include/TH /I%INSTALL_DIR%/include/THC
 set BASIC_CUDA_FLAGS= -DTH_INDEX_BASE=0 -I%INSTALL_DIR%/include -I%INSTALL_DIR%/include/TH -I%INSTALL_DIR%/include/THC
 set LDFLAGS=/LIBPATH:%INSTALL_DIR%/lib
+set MKL_LIB_ROOT=C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64
+set MKL_LIB_ROOT=%MKL_LIB_ROOT:\=/%
+set MKL_INC_ROOT=C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\include
+set MKL_INC_ROOT=%MKL_INC_ROOT:\=/%
+set MKL_OMP_ROOT=C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\compiler\lib\intel64
+set MKL_OMP_ROOT=%MKL_OMP_ROOT:\=/%
+
 :: set TORCH_CUDA_ARCH_LIST=6.1
 
 set C_FLAGS=%BASIC_C_FLAGS% /D_WIN32 /Z7 /EHa /DNOMINMAX
@@ -31,7 +38,7 @@ call:build THNN
 
 IF %NO_CUDA% EQU 0 (
   call:build THC
-  call:build THCS 
+  call:build THCS
   call:build THCUNN
 )
 
@@ -47,9 +54,12 @@ xcopy /Y THCUNN\generic\THCUNN.h .
 goto:eof
 
 :build
+@setlocal
+  call "%VS140COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
   mkdir build\%~1
   cd build/%~1
-  cmake ../../%~1 -G "Visual Studio 14 2015 Win64" ^
+  REM cmake ../../%~1 -G "Visual Studio 14 2015 Win64" ^
+  cmake ../../%~1 -G "Ninja" ^
                   -DCMAKE_MODULE_PATH=%BASE_DIR%/cmake/FindCUDA ^
                   -DTorch_FOUND="1" ^
                   -DCMAKE_INSTALL_PREFIX="%INSTALL_DIR%" ^
@@ -73,12 +83,16 @@ goto:eof
                   -DTHCUNN_SO_VERSION=1 ^
                   -DNO_CUDA=%NO_CUDA% ^
                   -DCMAKE_BUILD_TYPE=Release ^
-                  -DLAPACK_LIBRARIES="%INSTALL_DIR%/lib/mkl_rt.lib" -DLAPACK_FOUND=TRUE 
+                  -DCUDA_HOST_COMPILER:FILEPATH="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\cl.exe" ^
+                  -DWITH_BLAS=mkl ^
+                  -DCMAKE_LIBRARY_PATH="%MKL_LIB_ROOT%;%MKL_OMP_ROOT%" ^
+                  -DCMAKE_INCLUDE_PATH="%MKL_INC_ROOT%" ^
+                  -DLAPACK_LIBRARIES="%MKL_LIB_ROOT%/mkl_rt.lib" -DLAPACK_FOUND=TRUE
                   :: debug/release
 
-  msbuild INSTALL.vcxproj /p:Configuration=Release
+  cmake --build . --target install --config Release -- -j10 || exit /b 1
   cd ../..
-
+@endlocal
 goto:eof
 
 
